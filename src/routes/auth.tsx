@@ -35,7 +35,7 @@ function AuthPage() {
     e.preventDefault(); setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/auth" } });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setSent(true); toast.success("Check your email for the sign-in code.");
   }
   async function verify(e: React.FormEvent) {

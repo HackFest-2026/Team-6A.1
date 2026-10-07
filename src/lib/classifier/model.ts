@@ -69,10 +69,11 @@ export async function runInference(data: Float32Array, dims: number[]): Promise<
     const t0 = performance.now();
     const out = await session.run({ [INPUT_NAME]: new ort.Tensor("float32", data, dims) });
     const ms = Math.round(performance.now() - t0);
-    const tensor = out[session.outputNames[0]];
+    const tensor = out[session.outputNames[0] ?? ""];
+    if (!tensor) return { status: "error", stage: "inference", userMessage: "Model produced no output." };
     const arr = tensor.data as Float32Array;
     if (arr.length !== 1) return { status: "error", stage: "inference", userMessage: "Unexpected model output shape." };
-    return resultFromLogit(arr[0], ms);
+    return resultFromLogit(arr[0] ?? NaN, ms);
   } catch {
     return { status: "error", stage: "inference", userMessage: "The scan could not be processed." };
   }
