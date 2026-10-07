@@ -10,7 +10,7 @@ export function rgbaToCHW(rgba: Uint8ClampedArray | Uint8Array, size = INPUT_SIZ
   const out = new Float32Array(3 * plane);
   for (let i = 0; i < plane; i++) {
     for (let c = 0; c < 3; c++) {
-      out[c * plane + i] = (rgba[i * 4 + c] / 255 - MEAN[c]) / STD[c];
+      out[c * plane + i] = ((rgba[i * 4 + c] ?? 0) / 255 - (MEAN[c] ?? 0)) / (STD[c] ?? 1);
     }
   }
   return { data: out, dims: [1, 3, size, size] as [number, number, number, number] };

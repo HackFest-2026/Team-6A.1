@@ -10,7 +10,7 @@ export const STD = [0.229, 0.224, 0.225] as const;
 export const APP_VERSION = "1.0.0";
 
 export const MODEL_URL: string =
-  (import.meta.env.VITE_MODEL_URL as string | undefined) || modelAsset.url;
+  (import.meta.env['VITE_MODEL_URL'] as string | undefined) || modelAsset.url;
 
 export const DISCLAIMER =
   "This is an AI-assisted screening result and is not a definitive medical diagnosis. Please consult a qualified healthcare professional for medical evaluation.";

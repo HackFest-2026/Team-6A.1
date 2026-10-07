@@ -14,19 +14,20 @@ export function measureQuality(img: ImageBitmap): QualityReport {
   canvas.height = size;
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   ctx.drawImage(img, 0, 0, size, size);
-  const d = ctx.getImageData(0, 0, size, size).data;
-  const g = new Float32Array(size * size);
+  const d = ctx.getImageData(0, 0, size, size).data as unknown as number[];
+  const g: number[] = new Array(size * size).fill(0);
   let sum = 0;
   for (let i = 0; i < g.length; i++) {
-    g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
-    sum += g[i];
+    const v = 0.299 * d[i * 4]! + 0.587 * d[i * 4 + 1]! + 0.114 * d[i * 4 + 2]!;
+    g[i] = v;
+    sum += v;
   }
   const meanBrightness = sum / g.length;
   let lsum = 0, lsq = 0, n = 0;
   for (let y = 1; y < size - 1; y++) {
     for (let x = 1; x < size - 1; x++) {
       const i = y * size + x;
-      const l = g[i - 1] + g[i + 1] + g[i - size] + g[i + size] - 4 * g[i];
+      const l = g[i - 1]! + g[i + 1]! + g[i - size]! + g[i + size]! - 4 * g[i]!;
       lsum += l; lsq += l * l; n++;
     }
   }
