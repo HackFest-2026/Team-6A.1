@@ -1,15 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { pageHead } from "@/lib/page-head";
+import { myAppointmentsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/appointments")({
-  head: () => ({ meta: [{ title: "Appointments — PneumoScan AI" }, { name: "description", content: "Appointments in PneumoScan AI." }, { property: "og:title", content: "Appointments — PneumoScan AI" }, { property: "og:description", content: "Appointments in PneumoScan AI." }] }),
+  head: () => pageHead("Appointments", "Track and manage your doctor appointment requests."),
+  loader: ({ context }) => context.queryClient.ensureQueryData(myAppointmentsQuery),
   component: AppointmentsPage,
 });
 
 function AppointmentsPage() {
+  const { data } = useSuspenseQuery(myAppointmentsQuery);
+  const qc = useQueryClient();
+  async function cancel(id: string) {
+    const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("Cancelled"); qc.invalidateQueries({ queryKey: ["appointments"] }); }
+  }
   return (
-    <div>
+    <div className="space-y-6">
       <h1 className="text-3xl">Appointments</h1>
-      <p className="mt-4 text-muted-foreground">This page has not been built yet.</p>
+      {data.length === 0 ? <p className="text-sm text-muted-foreground">No appointments yet.</p> : (
+        <ul className="divide-y rounded-xl border bg-card">
+          {data.map((a) => (
+            <li key={a.id} className="flex flex-wrap items-center gap-4 p-4">
+              <div className="flex-1">
+                <p className="font-medium">{a.doctors?.full_name ?? "Doctor"}</p>
+                <p className="text-xs text-muted-foreground">{a.doctors?.specialization} · {new Date(a.scheduled_at).toLocaleString()}</p>
+              </div>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs capitalize">{a.status}</span>
+              {(a.status === "requested" || a.status === "accepted") && <Button size="sm" variant="ghost" onClick={() => cancel(a.id)}>Cancel</Button>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
