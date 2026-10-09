@@ -52,6 +52,51 @@ export type Database = {
           },
         ]
       }
+      doctor_reviews: {
+        Row: {
+          appointment_id: string
+          comment: string | null
+          created_at: string
+          doctor_id: string
+          id: string
+          patient_id: string
+          rating: number
+        }
+        Insert: {
+          appointment_id: string
+          comment?: string | null
+          created_at?: string
+          doctor_id: string
+          id?: string
+          patient_id: string
+          rating: number
+        }
+        Update: {
+          appointment_id?: string
+          comment?: string | null
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          patient_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_reviews_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_reviews_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctors: {
         Row: {
           available_days: string[]
@@ -184,6 +229,7 @@ export type Database = {
       scans: {
         Row: {
           created_at: string
+          gradcam: string | null
           id: string
           inference_ms: number | null
           label: string
@@ -195,6 +241,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gradcam?: string | null
           id?: string
           inference_ms?: number | null
           label: string
@@ -206,6 +253,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gradcam?: string | null
           id?: string
           inference_ms?: number | null
           label?: string
@@ -213,6 +261,24 @@ export type Database = {
           model_version?: string
           probability?: number
           thumbnail?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          tier?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -240,6 +306,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_premium_demo: { Args: never; Returns: string }
+      booked_slots: {
+        Args: { _doctor_id: string; _from: string; _to: string }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -247,6 +318,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_premium: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "doctor" | "patient"

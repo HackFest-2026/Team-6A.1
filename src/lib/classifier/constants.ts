@@ -1,6 +1,8 @@
-import modelAsset from "@/assets/pneumoscan_single.onnx.asset.json";
+import modelAsset from "@/assets/pneumoscan_single_cam.onnx.asset.json";
 
 export const MODEL_ID = "pneumoscan-mobilenetv2";
+/** User-facing name; MODEL_ID stays the internal identifier. */
+export const MODEL_DISPLAY_NAME = "PneumoScan AI";
 export const MODEL_VERSION = "1.0";
 export const THRESHOLD = 0.71;
 export const INPUT_NAME = "input";
