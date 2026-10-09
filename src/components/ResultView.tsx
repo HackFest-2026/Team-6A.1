@@ -1,6 +1,6 @@
 import { CircleOff, TriangleAlert } from "lucide-react";
 import { isValidCompleted, type ScanResult } from "@/lib/classifier/result";
-import { THRESHOLD } from "@/lib/classifier/constants";
+import { MODEL_DISPLAY_NAME, THRESHOLD } from "@/lib/classifier/constants";
 import { Disclaimers } from "./Disclaimers";
 
 export function ResultView({ result }: { result: ScanResult }) {
@@ -18,7 +18,7 @@ export function ResultView({ result }: { result: ScanResult }) {
           </p>
         </div>
         <dl className="grid grid-cols-3 gap-3 font-mono text-xs text-muted-foreground">
-          <div><dt>Model</dt><dd className="text-foreground">{result.model.id}</dd></div>
+          <div><dt>Model</dt><dd className="text-foreground">{MODEL_DISPLAY_NAME}</dd></div>
           <div><dt>Version</dt><dd className="text-foreground">{result.model.version}</dd></div>
           <div><dt>Inference</dt><dd className="text-foreground">{result.inferenceMs} ms</dd></div>
         </dl>

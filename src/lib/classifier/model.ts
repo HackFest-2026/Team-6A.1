@@ -1,5 +1,6 @@
 import type { InferenceSession } from "onnxruntime-web";
 import { INPUT_NAME, MODEL_URL } from "./constants";
+import camWeights from "./cam-weights.json";
 import { resultFromLogit, type ScanResult } from "./result";
 
 type Status = { loaded: boolean; lastLoadedAt: Date | null; lastError: string | null };
@@ -8,7 +9,7 @@ export const modelStatus: Status = { loaded: false, lastLoadedAt: null, lastErro
 let sessionPromise: Promise<InferenceSession> | null = null;
 let ortMod: typeof import("onnxruntime-web") | null = null;
 
-const CACHE_NAME = "pneumoscan-model-v1";
+const CACHE_NAME = "pneumoscan-model-v2";
 
 async function fetchModel(onProgress: (f: number) => void): Promise<ArrayBuffer> {
   try {
@@ -62,19 +63,36 @@ export function loadModel(onProgress: (f: number) => void = () => {}): Promise<I
 }
 
 export async function runInference(data: Float32Array, dims: number[]): Promise<ScanResult> {
+  return (await runInferenceWithCam(data, dims)).result;
+}
+
+/** Class activation map from the real final feature map × classifier weights (equals Grad-CAM for GAP+linear heads). */
+function computeCam(feat: Float32Array, fdims: readonly number[]): { map: Float32Array; size: number } | null {
+  const [, c, h, w] = fdims as number[];
+  if (!c || !h || !w || c !== camWeights.weights.length) return null;
+  const hw = h * w, map = new Float32Array(hw);
+  for (let k = 0; k < c; k++) { const wk = camWeights.weights[k]!; for (let i = 0; i < hw; i++) map[i]! += wk * feat[k * hw + i]!; }
+  let max = 0; for (let i = 0; i < hw; i++) { map[i] = Math.max(0, map[i]!); max = Math.max(max, map[i]!); }
+  if (max > 0) for (let i = 0; i < hw; i++) map[i]! /= max;
+  return { map, size: h };
+}
+
+export async function runInferenceWithCam(data: Float32Array, dims: number[]): Promise<{ result: ScanResult; cam: { map: Float32Array; size: number } | null }> {
   let session: InferenceSession;
-  try { session = await loadModel(); } catch { return { status: "model_unavailable" }; }
+  try { session = await loadModel(); } catch { return { result: { status: "model_unavailable" }, cam: null }; }
   try {
     const ort = ortMod!;
     const t0 = performance.now();
     const out = await session.run({ [INPUT_NAME]: new ort.Tensor("float32", data, dims) });
     const ms = Math.round(performance.now() - t0);
-    const tensor = out[session.outputNames[0] ?? ""];
-    if (!tensor) return { status: "error", stage: "inference", userMessage: "Model produced no output." };
+    const tensor = out["logit"] ?? out[session.outputNames[0] ?? ""];
+    if (!tensor) return { result: { status: "error", stage: "inference", userMessage: "Model produced no output." }, cam: null };
     const arr = tensor.data as Float32Array;
-    if (arr.length !== 1) return { status: "error", stage: "inference", userMessage: "Unexpected model output shape." };
-    return resultFromLogit(arr[0] ?? NaN, ms);
+    if (arr.length !== 1) return { result: { status: "error", stage: "inference", userMessage: "Unexpected model output shape." }, cam: null };
+    const f = out[camWeights.feature];
+    const cam = f ? computeCam(f.data as Float32Array, f.dims) : null;
+    return { result: resultFromLogit(arr[0] ?? NaN, ms), cam };
   } catch {
-    return { status: "error", stage: "inference", userMessage: "The scan could not be processed." };
+    return { result: { status: "error", stage: "inference", userMessage: "The scan could not be processed." }, cam: null };
   }
 }
