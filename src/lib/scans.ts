@@ -16,11 +16,12 @@ export function rowToResult(row: ScanRow): ScanResult {
   return isValidCompleted(r) ? r : { status: "error", stage: "save", userMessage: "This saved record failed validation." };
 }
 
-export async function saveScan(client: Client, userId: string, result: CompletedResult, thumbnail: string) {
+export async function saveScan(client: Client, userId: string, result: CompletedResult, thumbnail: string, gradcam: string | null = null) {
   if (!isValidCompleted(result)) throw new Error("Refusing to save an invalid result");
   const { data, error } = await client.from("scans").insert({
     user_id: userId,
     thumbnail,
+    gradcam,
     label: result.prediction,
     probability: result.pneumoniaProbability,
     model_id: result.model.id,
