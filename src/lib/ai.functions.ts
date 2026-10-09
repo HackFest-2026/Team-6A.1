@@ -16,7 +16,7 @@ export const explainScan = createServerFn({ method: "POST" })
     if (pe || !premium) return { ok: false as const, error: "AI explanation is a Premium feature." };
     const { data: scan, error } = await supabase.from("scans").select("label, probability, model_version, created_at").eq("id", data.scanId).maybeSingle();
     if (error || !scan) return { ok: false as const, error: "Scan not found." };
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env["LOVABLE_API_KEY"];
     if (!key) return { ok: false as const, error: "AI service is not configured." };
 
     const facts = [
