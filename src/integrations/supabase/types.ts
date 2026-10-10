@@ -104,6 +104,7 @@ export type Database = {
           clinic: string
           council: string
           created_at: string
+          documents: string[]
           experience_years: number
           fee: number
           full_name: string
@@ -123,6 +124,7 @@ export type Database = {
           clinic: string
           council: string
           created_at?: string
+          documents?: string[]
           experience_years: number
           fee: number
           full_name: string
@@ -142,6 +144,7 @@ export type Database = {
           clinic?: string
           council?: string
           created_at?: string
+          documents?: string[]
           experience_years?: number
           fee?: number
           full_name?: string
