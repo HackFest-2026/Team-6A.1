@@ -20,16 +20,14 @@ export async function downloadScanReport(row: ScanRow) {
   line(`Generated ${new Date().toLocaleString()}`, 9);
   y += 8;
   line(`Scan time: ${new Date(row.created_at).toLocaleString()}`);
-  line(`Screening label: ${result.prediction}`, 12, true);
+  line(`Screening result: ${result.prediction === "PNEUMONIA" ? "PNEUMONIA DETECTED" : "NO PNEUMONIA DETECTED"}`, 12, true);
   line(`Pneumonia probability (model output): ${(result.pneumoniaProbability * 100).toFixed(1)}% (threshold ${THRESHOLD})`);
   line(`Model: ${MODEL_DISPLAY_NAME}  Version: ${result.model.version}`);
   y += 6;
   line("What this means", 12, true);
-  line(result.prediction === "PNEUMONIA DETECTED"
+  line(result.prediction === "PNEUMONIA"
     ? "The model's pneumonia probability is at or above the screening threshold. Please have the X-ray reviewed by a doctor."
-    : result.prediction === "NO PNEUMONIA DETECTED"
-      ? "The model's pneumonia probability is below the screening threshold. This does not rule out disease; see a doctor if you have symptoms."
-      : "The model output is close to the threshold. Please have the X-ray reviewed by a doctor.");
+    : "The model's pneumonia probability is below the screening threshold. This does not rule out disease; see a doctor if you have symptoms.");
   if (row.gradcam) {
     y += 6;
     line("Grad-CAM attention map", 12, true);
