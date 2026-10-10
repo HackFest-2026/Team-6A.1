@@ -13,8 +13,7 @@ export const Route = createFileRoute("/_authenticated/premium")({
   component: PremiumPage,
 });
 
-/** Price is configuration, not invented: set VITE_PREMIUM_PRICE_INR (monthly, in rupees). */
-const PRICE = Number(import.meta.env["VITE_PREMIUM_PRICE_INR"] ?? "") || null;
+const PRICE = 59;
 const RAZORPAY_KEY = (import.meta.env["VITE_RAZORPAY_KEY_ID"] as string | undefined) || null;
 
 const FREE = ["Single X-ray screening", "Scan history", "Basic PDF report", "Find & book doctors"];
@@ -37,7 +36,8 @@ function PremiumPage() {
       <p className="text-sm">Current plan: <b>{tierLabel(tier)}</b></p>
       {payment === "success" && <p className="rounded-md border bg-muted p-3 text-sm">Payment received. Premium unlocks once the payment is confirmed.</p>}
       {payment === "failed" && <p className="rounded-md border border-destructive p-3 text-sm text-destructive">Payment failed or was cancelled. You have not been charged.</p>}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
+        <Plan title="Grad-CAM only" price="₹9 per image" features={["Real attention heatmap for one scan", "Unlock from the scan result"]} current={false} />
         <Plan title="Free" price="₹0" features={FREE} current={tier === "free"} />
         <Plan title="Premium" price={PRICE ? `₹${PRICE.toLocaleString("en-IN")} / month` : "Price not set yet"} features={PREMIUM} current={isPremium}>
           <Button className="w-full" disabled={!PRICE || !RAZORPAY_KEY || tier === "premium_paid"}>
