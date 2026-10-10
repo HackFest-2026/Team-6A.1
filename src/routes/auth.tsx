@@ -10,9 +10,11 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — PneumoScan AI" },
-      { name: "description", content: "Sign in to PneumoScan AI with a one-time code sent to your email." },
+      { name: "description", content: "Sign in to PneumoScan AI with a secure link sent to your email." },
       { property: "og:title", content: "Sign in — PneumoScan AI" },
-      { property: "og:description", content: "Email one-time code sign-in." },
+      { property: "og:description", content: "Passwordless email link sign-in." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -21,16 +23,10 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const [pw, setPw] = useState("");
-  async function pwLogin() {
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
-    setBusy(false);
-    if (error) toast.error(error.message);
-  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { if (data.user) navigate({ to: "/dashboard", replace: true }); });
@@ -43,11 +39,11 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/auth-callback" } });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    setSent(true); toast.success("Check your email for the sign-in code.");
+    setSent(true);
   }
-  async function verify(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
+  async function pwLogin() {
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
     setBusy(false);
     if (error) toast.error(error.message);
   }
@@ -56,23 +52,28 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-hero px-4">
       <div className="w-full max-w-sm rounded-xl border bg-card p-8 shadow-card">
         <Link to="/" className="font-display text-xl">PneumoScan<span className="text-primary"> AI</span></Link>
-        <h1 className="mt-6 text-2xl">{sent ? "Enter your code" : "Sign in or create account"}</h1>
-        {!sent ? (
+        <h1 className="mt-6 text-2xl">{sent ? "Check your email" : "Sign in or create account"}</h1>
+        {sent ? (
+          <div className="mt-6 space-y-4 text-sm">
+            <p>We sent a secure sign-in link to <b>{email}</b>. Open it on this device to go straight to your dashboard.</p>
+            <p className="text-muted-foreground">The link works once and expires after a short time.</p>
+            <Button variant="outline" className="w-full" disabled={busy} onClick={send}>Resend link</Button>
+            <button type="button" className="w-full text-muted-foreground underline" onClick={() => setSent(false)}>Use a different email</button>
+          </div>
+        ) : (
           <form onSubmit={send} className="mt-6 space-y-4">
             <div className="space-y-2"><Label htmlFor="email">Email</Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-            <Button className="w-full" disabled={busy}>Send code</Button>
-            <div className="space-y-2"><Label htmlFor="pw">Password (demo accounts)</Label>
-              <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
-            <Button type="button" variant="outline" className="w-full" disabled={busy || !pw} onClick={pwLogin}>Sign in with password</Button>
-          </form>
-        ) : (
-          <form onSubmit={verify} className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">We emailed {email}. Enter the code, or open the link in that email.</p>
-            <div className="space-y-2"><Label htmlFor="code">Code</Label>
-              <Input id="code" inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={(e) => setCode(e.target.value)} className="font-mono tracking-widest" /></div>
-            <Button className="w-full" disabled={busy}>Verify</Button>
-            <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setSent(false)}>Use a different email</button>
+            <Button className="w-full" disabled={busy}>Email me a sign-in link</Button>
+            {!showDemo ? (
+              <button type="button" className="w-full text-xs text-muted-foreground underline" onClick={() => setShowDemo(true)}>Demo account sign-in</button>
+            ) : (
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="pw">Demo account password</Label>
+                <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+                <Button type="button" variant="outline" className="w-full" disabled={busy || !pw || !email} onClick={pwLogin}>Sign in to demo account</Button>
+              </div>
+            )}
           </form>
         )}
       </div>
