@@ -9,7 +9,7 @@ import { tierLabel, usePremium } from "@/lib/premium";
 
 export const Route = createFileRoute("/_authenticated/premium")({
   head: () => pageHead("Premium Membership", "Compare Free and Premium plans for PneumoScan AI."),
-  validateSearch: (s: Record<string, unknown>) => ({ payment: typeof s.payment === "string" ? s.payment : undefined }),
+  validateSearch: (s: Record<string, unknown>): { payment?: string } => (typeof s["payment"] === "string" ? { payment: s["payment"] } : {}),
   component: PremiumPage,
 });
 
