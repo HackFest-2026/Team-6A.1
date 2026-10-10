@@ -1,4 +1,4 @@
-import { THRESHOLD, DATA_LIMITATION, DISCLAIMER, PERFORMANCE_NOTE } from "@/lib/classifier/constants";
+import { MODEL_DISPLAY_NAME, THRESHOLD, DATA_LIMITATION, DISCLAIMER, PERFORMANCE_NOTE } from "@/lib/classifier/constants";
 import { isValidCompleted } from "@/lib/classifier/result";
 import { rowToResult, type ScanRow } from "@/lib/scans";
 
@@ -22,7 +22,21 @@ export async function downloadScanReport(row: ScanRow) {
   line(`Scan time: ${new Date(row.created_at).toLocaleString()}`);
   line(`Screening label: ${result.prediction}`, 12, true);
   line(`Pneumonia probability (model output): ${(result.pneumoniaProbability * 100).toFixed(1)}% (threshold ${THRESHOLD})`);
-  line(`Model: ${result.model.id}  Version: ${result.model.version}`);
+  line(`Model: ${MODEL_DISPLAY_NAME}  Version: ${result.model.version}`);
+  y += 6;
+  line("What this means", 12, true);
+  line(result.prediction === "PNEUMONIA DETECTED"
+    ? "The model's pneumonia probability is at or above the screening threshold. Please have the X-ray reviewed by a doctor."
+    : result.prediction === "NO PNEUMONIA DETECTED"
+      ? "The model's pneumonia probability is below the screening threshold. This does not rule out disease; see a doctor if you have symptoms."
+      : "The model output is close to the threshold. Please have the X-ray reviewed by a doctor.");
+  if (row.gradcam) {
+    y += 6;
+    line("Grad-CAM attention map", 12, true);
+    doc.addImage(row.gradcam, "JPEG", 50, y, 180, 180);
+    y += 190;
+    line("Shows where the model focused, not confirmed lesion locations.", 9);
+  }
   line(`Scan ID: ${row.id}`, 9);
   y += 10;
   line("Limitations", 12, true);
