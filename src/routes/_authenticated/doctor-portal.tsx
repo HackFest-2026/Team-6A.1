@@ -75,17 +75,28 @@ function Requests({ doctorId }: { doctorId: string }) {
 function Apply() {
   const qc = useQueryClient();
   const [f, setF] = useState({ full_name: "", registration_number: "", council: "", qualification: "", specialization: "", clinic: "", experience_years: "0", fee: "0", available_hours: "", available_days: "Mon,Tue,Wed,Thu,Fri" });
+  const [files, setFiles] = useState<File[]>([]);
   const fields: [keyof typeof f, string][] = [["full_name", "Full name"], ["registration_number", "Medical registration number"], ["council", "Medical council"], ["qualification", "Qualification"], ["specialization", "Specialization"], ["clinic", "Clinic / hospital"], ["experience_years", "Years of experience"], ["fee", "Consultation fee (₹)"], ["available_days", "Available days (comma separated)"], ["available_hours", "Available hours"]];
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const { data: u } = await supabase.auth.getUser(); if (!u.user) return;
-    const { error } = await supabase.from("doctors").insert({ ...f, user_id: u.user.id, status: "PENDING", experience_years: Number(f.experience_years) || 0, fee: Number(f.fee) || 0, available_days: f.available_days.split(",").map((s) => s.trim()).filter(Boolean) });
+    if (!files.length) { toast.error("Please attach your registration certificate or degree."); return; }
+    const documents: string[] = [];
+    for (const file of files.slice(0, 5)) {
+      const path = `${u.user.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+      const { error: upErr } = await supabase.storage.from("doctor-docs").upload(path, file);
+      if (upErr) { toast.error(`${file.name}: ${upErr.message}`); return; }
+      documents.push(path);
+    }
+    const { error } = await supabase.from("doctors").insert({ ...f, documents, user_id: u.user.id, status: "PENDING", experience_years: Number(f.experience_years) || 0, fee: Number(f.fee) || 0, available_days: f.available_days.split(",").map((s) => s.trim()).filter(Boolean) });
     if (error) toast.error(error.message); else { toast.success("Application submitted"); qc.invalidateQueries({ queryKey: ["doctor"] }); }
   }
   return (
     <form onSubmit={submit} className="max-w-xl space-y-4">
       <h1 className="text-3xl">Apply as a doctor</h1>
       {fields.map(([k, l]) => (<div key={k} className="space-y-1"><Label htmlFor={k}>{l}</Label><Input id={k} required={k !== "available_hours"} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>))}
+      <div className="space-y-1"><Label htmlFor="docs">Supporting documents (registration certificate, degree — PDF or image, up to 5)</Label>
+        <Input id="docs" type="file" multiple accept="application/pdf,image/*" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} /></div>
       <Button>Submit application</Button>
     </form>
   );

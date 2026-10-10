@@ -42,6 +42,14 @@ function AdminPage() {
         <li key={d.id} className="rounded-xl border bg-card p-4 text-sm">
           <p className="font-medium">{d.full_name} <span className="ml-2 rounded bg-muted px-2 py-0.5 text-xs">{d.status}</span></p>
           <p className="text-muted-foreground">Reg. {d.registration_number} · {d.council} · {d.qualification} · {d.specialization} · {d.clinic}</p>
+          {d.documents.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">{d.documents.map((path, i) => (
+              <Button key={path} size="sm" variant="outline" onClick={async () => {
+                const { data, error } = await supabase.storage.from("doctor-docs").createSignedUrl(path, 300);
+                if (error || !data) toast.error("Could not open document"); else window.open(data.signedUrl, "_blank", "noopener");
+              }}>Document {i + 1}</Button>))}</div>
+          ) : <p className="mt-2 text-xs text-muted-foreground">No documents uploaded.</p>}
+          {d.reviewed_at && <p className="mt-1 text-xs text-muted-foreground">Reviewed {new Date(d.reviewed_at).toLocaleString()}{d.rejection_reason ? ` · Reason: ${d.rejection_reason}` : ""}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={() => review(d.id, "VERIFIED")}>Verify</Button>
             <Button size="sm" variant="outline" onClick={() => review(d.id, "UNDER_REVIEW")}>Under review</Button>

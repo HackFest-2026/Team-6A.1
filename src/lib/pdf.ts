@@ -1,4 +1,4 @@
-import { MODEL_DISPLAY_NAME, THRESHOLD, DATA_LIMITATION, DISCLAIMER, PERFORMANCE_NOTE } from "@/lib/classifier/constants";
+import { MODEL_DISPLAY_NAME, REPORT_METRICS, THRESHOLD, DATA_LIMITATION, DISCLAIMER, PERFORMANCE_NOTE } from "@/lib/classifier/constants";
 import { isValidCompleted } from "@/lib/classifier/result";
 import { rowToResult, type ScanRow } from "@/lib/scans";
 
@@ -39,6 +39,7 @@ export async function downloadScanReport(row: ScanRow) {
   y += 10;
   line("Limitations", 12, true);
   line(DATA_LIMITATION);
+  line(REPORT_METRICS);
   line(PERFORMANCE_NOTE);
   y += 10;
   line("Disclaimer", 12, true);

@@ -55,12 +55,13 @@ function Shell() {
         <Link to="/status" className="px-3 py-2 text-xs opacity-70 hover:opacity-100">System status</Link>
         <button onClick={signOut} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent"><LogOut className="size-4" />Sign out</button>
       </aside>
-      <div className="flex-1">
-        <div className="flex gap-2 overflow-x-auto border-b bg-sidebar p-2 text-xs text-sidebar-foreground md:hidden">
-          {nav.map(({ to, label }) => <Link key={to} to={to} className="whitespace-nowrap rounded px-2 py-1" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary" }}>{label}</Link>)}
-          <button onClick={signOut} className="whitespace-nowrap px-2">Sign out</button>
+      <div className="min-w-0 flex-1">
+        <div className="flex gap-1 overflow-x-auto border-b bg-sidebar p-2 text-sm text-sidebar-foreground md:hidden">
+          {nav.map(({ to, label }) => <Link key={to} to={to} className="whitespace-nowrap rounded px-3 py-2" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary" }}>{label}</Link>)}
+          {isAdmin && <Link to="/admin" className="whitespace-nowrap rounded px-3 py-2" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary" }}>Admin</Link>}
+          <button onClick={signOut} className="whitespace-nowrap px-3 py-2">Sign out</button>
         </div>
-        <main className="mx-auto max-w-5xl p-6 md:p-10"><Outlet /></main>
+        <main className="mx-auto max-w-5xl p-4 sm:p-6 md:p-10"><Outlet /></main>
       </div>
     </div>
   );
