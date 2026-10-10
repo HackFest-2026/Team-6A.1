@@ -157,6 +157,35 @@ export type Database = {
         }
         Relationships: []
       }
+      gradcam_unlocks: {
+        Row: {
+          created_at: string
+          kind: string
+          scan_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind?: string
+          scan_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          scan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gradcam_unlocks_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: true
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           consent_at: string | null
@@ -311,6 +340,7 @@ export type Database = {
         Args: { _doctor_id: string; _from: string; _to: string }
         Returns: string[]
       }
+      grant_admin: { Args: { _email: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -319,6 +349,10 @@ export type Database = {
         Returns: boolean
       }
       is_premium: { Args: { _user_id: string }; Returns: boolean }
+      unlock_gradcam_demo: {
+        Args: { _gradcam: string; _scan_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "doctor" | "patient"

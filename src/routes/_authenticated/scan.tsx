@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultView } from "@/components/ResultView";
 import { ExplainButton, GradcamImage } from "@/components/ExplainButton";
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/scan")({
 type Item = {
   key: string; name: string; preview: string | null; warnings: string[];
   result: ScanResult | null; savedId: string | null; gradcam: string | null;
+  /** Real heatmap kept only in this browser until the user unlocks it. */
+  locked: string | null;
   cam: { imageLeftPct: number; imageUpperPct: number } | null;
 };
 
@@ -31,20 +34,21 @@ type Item = {
 async function processOne(file: File, premium: boolean, userId: string | null): Promise<Omit<Item, "key" | "name">> {
   let img: ImageBitmap;
   try { img = await decodeImage(file); } catch {
-    return { preview: null, warnings: [], result: { status: "error", stage: "decode", userMessage: "This file could not be read as an image." }, savedId: null, gradcam: null, cam: null };
+    return { preview: null, warnings: [], result: { status: "error", stage: "decode", userMessage: "This file could not be read as an image." }, savedId: null, gradcam: null, locked: null, cam: null };
   }
   const preview = URL.createObjectURL(file);
   const warnings = measureQuality(img).warnings;
   const thumb = makeThumbnail(img);
   const { data, dims } = rgbaToCHW(resizeToRGBA(img));
   const { result, cam } = await runInferenceWithCam(data, dims);
-  const gradcam = premium && cam && isValidCompleted(result) ? renderCamOverlay(img, cam) : null;
+  const overlay = cam && isValidCompleted(result) ? renderCamOverlay(img, cam) : null;
+  const gradcam = premium ? overlay : null;
   let savedId: string | null = null;
   if (isValidCompleted(result) && userId) {
     try { savedId = await saveScan(supabase, userId, result, thumb, gradcam); }
     catch { toast.error(`${file.name}: result shown but not saved.`); }
   }
-  return { preview, warnings, result, savedId, gradcam, cam: premium && cam ? camSummary(cam) : null };
+  return { preview, warnings, result, savedId, gradcam, locked: premium ? null : overlay, cam: premium && cam ? camSummary(cam) : null };
 }
 
 function ScanPage() {
@@ -65,7 +69,7 @@ function ScanPage() {
     if (list.length > 1 && !isPremium) { toast.error("Bulk scanning is a Premium feature. Scanning the first image only."); list = list.slice(0, 1); }
     list = list.slice(0, 20);
     setBusy(true); setDone(0);
-    const base = list.map((f, i) => ({ key: `${Date.now()}-${i}`, name: f.name, preview: null, warnings: [], result: null, savedId: null, gradcam: null, cam: null }));
+    const base = list.map((f, i) => ({ key: `${Date.now()}-${i}`, name: f.name, preview: null, warnings: [], result: null, savedId: null, gradcam: null, locked: null, cam: null }));
     setItems(base);
     const { data: u } = await supabase.auth.getUser();
     for (let i = 0; i < list.length; i++) {
@@ -75,6 +79,14 @@ function ScanPage() {
     }
     qc.invalidateQueries({ queryKey: ["scans"] });
     setBusy(false);
+  }
+
+  async function unlock(it: Item) {
+    const { error } = await supabase.rpc("unlock_gradcam_demo", { _scan_id: it.savedId!, _gradcam: it.locked! });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Grad-CAM unlocked for this image (demo — no payment taken)");
+    setItems((prev) => prev.map((x) => (x.key === it.key ? { ...x, gradcam: x.locked, locked: null } : x)));
+    qc.invalidateQueries({ queryKey: ["scans"] });
   }
 
   return (
@@ -102,6 +114,16 @@ function ScanPage() {
               <div className="space-y-3">
                 {it.preview && <img src={it.preview} alt="Uploaded X-ray" className="w-full rounded-lg border object-contain" />}
                 {it.gradcam && <GradcamImage src={it.gradcam} />}
+                {!it.gradcam && it.locked && it.savedId && (
+                  <div className="rounded-xl border bg-card p-4 text-sm">
+                    <p className="font-medium">See where the model looked (Grad-CAM)</p>
+                    <p className="mt-1 text-muted-foreground">₹9 for this image, or ₹59/month for full Premium. Online payment isn't on yet — unlock in demo mode, no money taken.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => unlock(it)}>Unlock this image (demo)</Button>
+                      <Button size="sm" variant="outline" asChild><Link to="/premium">See Premium</Link></Button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-3">
                 {it.warnings.length > 0 && <ul className="rounded-md border bg-muted p-3 text-sm">{it.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul>}

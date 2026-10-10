@@ -15,6 +15,13 @@
       "when": 1791549355746,
       "tag": "0001_premium_reviews_slots_gradcam",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791625222935,
+      "tag": "0002_gradcam_unlock_and_grant_admin",
+      "breakpoints": true
     }
   ]
 }
