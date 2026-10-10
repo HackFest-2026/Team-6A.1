@@ -16,10 +16,19 @@ export function rgbaToCHW(rgba: Uint8ClampedArray | Uint8Array, size = INPUT_SIZ
   return { data: out, dims: [1, 3, size, size] as [number, number, number, number] };
 }
 
-/** Browser-only: decode an image file into an ImageBitmap (rejects non-images). */
+/** Browser-only: decode an image file into an ImageBitmap (rejects non-images).
+ *  Some phones/OSes send an empty MIME type, so we trust the decoder, not the label. */
 export async function decodeImage(file: File): Promise<ImageBitmap> {
-  if (!file.type.startsWith("image/")) throw new Error("Not an image file");
-  return await createImageBitmap(file);
+  if (file.type && !file.type.startsWith("image/")) throw new Error("Not an image file");
+  try {
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    const url = URL.createObjectURL(file);
+    try {
+      const el = new Image(); el.src = url; await el.decode();
+      return await createImageBitmap(el);
+    } finally { URL.revokeObjectURL(url); }
+  }
 }
 
 /** Browser-only: direct (non-aspect-preserving) resize to size x size, RGB. */

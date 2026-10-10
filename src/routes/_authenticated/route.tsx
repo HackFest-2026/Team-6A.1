@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, FileText, History, LayoutDashboard, LogOut, ScanLine, Settings, ShieldCheck, Stethoscope, User, UserRound } from "lucide-react";
+import { Calendar, Crown, FileText, History, LayoutDashboard, LogOut, ScanLine, Settings, ShieldCheck, Stethoscope, User, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -21,6 +21,7 @@ const nav = [
   { to: "/reports", label: "Reports", icon: FileText },
   { to: "/doctors", label: "Find Doctor", icon: Stethoscope },
   { to: "/appointments", label: "Appointments", icon: Calendar },
+  { to: "/premium", label: "Premium", icon: Crown },
   { to: "/profile", label: "Profile", icon: User },
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/doctor-portal", label: "Doctor portal", icon: UserRound },
