@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/scan")({
 type Item = {
   key: string; name: string; preview: string | null; warnings: string[];
   result: ScanResult | null; savedId: string | null; gradcam: string | null;
+  /** Real heatmap kept only in this browser until the user unlocks it. */
+  locked: string | null;
   cam: { imageLeftPct: number; imageUpperPct: number } | null;
 };
 
@@ -31,20 +33,21 @@ type Item = {
 async function processOne(file: File, premium: boolean, userId: string | null): Promise<Omit<Item, "key" | "name">> {
   let img: ImageBitmap;
   try { img = await decodeImage(file); } catch {
-    return { preview: null, warnings: [], result: { status: "error", stage: "decode", userMessage: "This file could not be read as an image." }, savedId: null, gradcam: null, cam: null };
+    return { preview: null, warnings: [], result: { status: "error", stage: "decode", userMessage: "This file could not be read as an image." }, savedId: null, gradcam: null, locked: null, cam: null };
   }
   const preview = URL.createObjectURL(file);
   const warnings = measureQuality(img).warnings;
   const thumb = makeThumbnail(img);
   const { data, dims } = rgbaToCHW(resizeToRGBA(img));
   const { result, cam } = await runInferenceWithCam(data, dims);
-  const gradcam = premium && cam && isValidCompleted(result) ? renderCamOverlay(img, cam) : null;
+  const overlay = cam && isValidCompleted(result) ? renderCamOverlay(img, cam) : null;
+  const gradcam = premium ? overlay : null;
   let savedId: string | null = null;
   if (isValidCompleted(result) && userId) {
     try { savedId = await saveScan(supabase, userId, result, thumb, gradcam); }
     catch { toast.error(`${file.name}: result shown but not saved.`); }
   }
-  return { preview, warnings, result, savedId, gradcam, cam: premium && cam ? camSummary(cam) : null };
+  return { preview, warnings, result, savedId, gradcam, locked: premium ? null : overlay, cam: premium && cam ? camSummary(cam) : null };
 }
 
 function ScanPage() {
