@@ -24,6 +24,13 @@ function AuthPage() {
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pw, setPw] = useState("");
+  async function pwLogin() {
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+    setBusy(false);
+    if (error) toast.error(error.message);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { if (data.user) navigate({ to: "/dashboard", replace: true }); });
@@ -33,7 +40,7 @@ function AuthPage() {
 
   async function send(e: React.FormEvent) {
     e.preventDefault(); setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/auth" } });
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/auth-callback" } });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     setSent(true); toast.success("Check your email for the sign-in code.");
@@ -55,6 +62,9 @@ function AuthPage() {
             <div className="space-y-2"><Label htmlFor="email">Email</Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
             <Button className="w-full" disabled={busy}>Send code</Button>
+            <div className="space-y-2"><Label htmlFor="pw">Password (demo accounts)</Label>
+              <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
+            <Button type="button" variant="outline" className="w-full" disabled={busy || !pw} onClick={pwLogin}>Sign in with password</Button>
           </form>
         ) : (
           <form onSubmit={verify} className="mt-6 space-y-4">
