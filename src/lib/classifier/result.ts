@@ -12,7 +12,7 @@ export type CompletedResult = {
 export type ModelUnavailableResult = { status: "model_unavailable" };
 export type ErrorResult = {
   status: "error";
-  stage: "decode" | "quality" | "preprocess" | "inference" | "save";
+  stage: "decode" | "quality" | "validate" | "preprocess" | "inference" | "save";
   userMessage: string;
 };
 export type ScanResult = CompletedResult | ModelUnavailableResult | ErrorResult;
@@ -41,7 +41,11 @@ export function isValidCompleted(r: unknown): r is CompletedResult {
 
 export function resultFromLogit(logit: number, inferenceMs: number): ScanResult {
   if (!Number.isFinite(logit)) {
-    return { status: "error", stage: "inference", userMessage: "The model returned an invalid output." };
+    return {
+      status: "error",
+      stage: "inference",
+      userMessage: "The model returned an invalid output.",
+    };
   }
   const p = sigmoid(logit);
   const r: CompletedResult = {

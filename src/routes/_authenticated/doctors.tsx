@@ -31,10 +31,33 @@ function DoctorsPage() {
     if (!when || new Date(when) <= new Date()) { toast.error("Pick a future date and time"); return; }
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
-    const { error } = await supabase.from("appointments").insert({ doctor_id: doctorId, patient_id: u.user.id, scheduled_at: new Date(when).toISOString(), note: note || null, status: "requested" });
+    const { data: apptData, error } = await supabase
+      .from("appointments")
+      .insert({
+        doctor_id: doctorId,
+        patient_id: u.user.id,
+        scheduled_at: new Date(when).toISOString(),
+        note: note || null,
+        status: "REQUESTED",
+      })
+      .select("id")
+      .single();
+
     if (error) { toast.error(error.message); return; }
-    if (shareId) await supabase.from("scan_shares").insert({ scan_id: shareId, doctor_id: doctorId, patient_id: u.user.id });
-    toast.success("Appointment requested");
+    if (shareId && apptData?.id) {
+      await supabase.from("scan_shares").insert({ scan_id: shareId, doctor_id: doctorId, patient_id: u.user.id });
+    }
+
+    import("@/lib/notifications").then(({ sendAppointmentNotification }) => {
+      sendAppointmentNotification({
+        type: "appointment_requested",
+        appointmentId: apptData?.id || doctorId,
+        scheduledAt: when,
+        note,
+      });
+    });
+
+    toast.success("Appointment requested successfully!");
     setBooking(null); setWhen(""); setNote(""); setShareId("");
     qc.invalidateQueries({ queryKey: ["appointments"] });
   }

@@ -2,13 +2,24 @@ import { MODEL_DISPLAY_NAME, REPORT_METRICS, THRESHOLD, DATA_LIMITATION, DISCLAI
 import { isValidCompleted } from "@/lib/classifier/result";
 import { rowToResult, type ScanRow } from "@/lib/scans";
 
-export async function downloadScanReport(row: ScanRow) {
+export interface ClinicalReviewDetails {
+  doctorName?: string;
+  specialization?: string;
+  qualification?: string;
+  registrationNumber?: string;
+  clinic?: string;
+  notes?: string;
+  reviewedAt?: string;
+  status?: string;
+}
+
+export async function downloadScanReport(row: ScanRow, clinicalReview?: ClinicalReviewDetails) {
   const result = rowToResult(row);
   if (!isValidCompleted(result)) throw new Error("Invalid result; report not generated");
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
-  let y = 60;
+  let y = 50;
   const line = (t: string, size = 11, bold = false) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(size);
@@ -16,9 +27,26 @@ export async function downloadScanReport(row: ScanRow) {
     doc.text(lines, 50, y);
     y += lines.length * size * 1.35 + 6;
   };
-  line("PneumoScan AI - Screening Report", 18, true);
-  line(`Generated ${new Date().toLocaleString()}`, 9);
-  y += 8;
+
+  line("PneumoScan AI — Clinical Screening Report", 18, true);
+  line(`Report generated: ${new Date().toLocaleString()}`, 9);
+  y += 6;
+
+  if (clinicalReview?.doctorName) {
+    line("Verified Medical Practitioner Review", 13, true);
+    line(`Attending Physician: Dr. ${clinicalReview.doctorName} (${clinicalReview.qualification || "MD"})`);
+    if (clinicalReview.specialization) line(`Specialty: ${clinicalReview.specialization}`);
+    if (clinicalReview.registrationNumber) line(`Registration / License: ${clinicalReview.registrationNumber}`);
+    if (clinicalReview.clinic) line(`Institution / Clinic: ${clinicalReview.clinic}`);
+    if (clinicalReview.reviewedAt) line(`Review Timestamp: ${new Date(clinicalReview.reviewedAt).toLocaleString()}`);
+    if (clinicalReview.notes) {
+      y += 4;
+      line("Clinical Findings & Recommendations:", 11, true);
+      line(`"${clinicalReview.notes}"`, 10);
+    }
+    y += 10;
+  }
+
   line(`Scan time: ${new Date(row.created_at).toLocaleString()}`);
   line(`Screening result: ${result.prediction === "PNEUMONIA" ? "PNEUMONIA DETECTED" : "NO PNEUMONIA DETECTED"}`, 12, true);
   line(`Pneumonia probability (model output): ${(result.pneumoniaProbability * 100).toFixed(1)}% (threshold ${THRESHOLD})`);

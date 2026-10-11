@@ -26,6 +26,8 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedDoctorIndexRouteImport } from './routes/_authenticated/doctor/index'
+import { Route as AuthenticatedDoctorVerificationStatusRouteImport } from './routes/_authenticated/doctor/verification-status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -113,6 +115,18 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDoctorIndexRoute =
+  AuthenticatedDoctorIndexRouteImport.update({
+    id: '/doctor/',
+    path: '/doctor/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDoctorVerificationStatusRoute =
+  AuthenticatedDoctorVerificationStatusRouteImport.update({
+    id: '/doctor/verification-status',
+    path: '/doctor/verification-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/scan': typeof AuthenticatedScanRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/doctor/verification-status': typeof AuthenticatedDoctorVerificationStatusRoute
+  '/doctor/': typeof AuthenticatedDoctorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +165,8 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/scan': typeof AuthenticatedScanRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/doctor/verification-status': typeof AuthenticatedDoctorVerificationStatusRoute
+  '/doctor': typeof AuthenticatedDoctorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,6 +187,8 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/doctor/verification-status': typeof AuthenticatedDoctorVerificationStatusRoute
+  '/_authenticated/doctor/': typeof AuthenticatedDoctorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +209,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/scan'
     | '/settings'
+    | '/doctor/verification-status'
+    | '/doctor/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,6 +229,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/scan'
     | '/settings'
+    | '/doctor/verification-status'
+    | '/doctor'
   id:
     | '__root__'
     | '/'
@@ -226,6 +250,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/scan'
     | '/_authenticated/settings'
+    | '/_authenticated/doctor/verification-status'
+    | '/_authenticated/doctor/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,6 +384,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/doctor/': {
+      id: '/_authenticated/doctor/'
+      path: '/doctor'
+      fullPath: '/doctor/'
+      preLoaderRoute: typeof AuthenticatedDoctorIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/doctor/verification-status': {
+      id: '/_authenticated/doctor/verification-status'
+      path: '/doctor/verification-status'
+      fullPath: '/doctor/verification-status'
+      preLoaderRoute: typeof AuthenticatedDoctorVerificationStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -373,6 +413,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedDoctorVerificationStatusRoute: typeof AuthenticatedDoctorVerificationStatusRoute
+  AuthenticatedDoctorIndexRoute: typeof AuthenticatedDoctorIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -387,6 +429,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedDoctorVerificationStatusRoute:
+    AuthenticatedDoctorVerificationStatusRoute,
+  AuthenticatedDoctorIndexRoute: AuthenticatedDoctorIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

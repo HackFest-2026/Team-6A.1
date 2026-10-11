@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
-const nav = [
+const patientNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/scan", label: "Scan X-Ray", icon: ScanLine },
   { to: "/history", label: "History", icon: History },
@@ -24,11 +24,16 @@ const nav = [
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/profile", label: "Profile", icon: User },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/doctor-portal", label: "Doctor portal", icon: UserRound },
+] as const;
+
+const doctorNav = [
+  { to: "/doctor", label: "Doctor Dashboard", icon: LayoutDashboard },
+  { to: "/profile", label: "Profile", icon: User },
+  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 function Shell() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isDoctor } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   async function signOut() {
@@ -36,11 +41,23 @@ function Shell() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
+  // Doctors see a focused doctor nav; patients see the full patient nav.
+  // Non-doctor users who want to apply or check status get the doctor portal link.
+  const nav = isDoctor
+    ? doctorNav
+    : [...patientNav, { to: "/doctor/verification-status", label: "Doctor Portal", icon: UserRound } as const];
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col bg-sidebar p-4 text-sidebar-foreground md:flex">
-        <Link to="/dashboard" className="px-2 py-3 font-display text-lg text-sidebar-accent-foreground">PneumoScan<span className="text-sidebar-primary"> AI</span></Link>
-        <nav className="mt-4 flex flex-1 flex-col gap-1 text-sm">
+        <Link to={isDoctor ? "/doctor" : "/dashboard"} className="px-2 py-3 font-display text-lg text-sidebar-accent-foreground">PneumoScan<span className="text-sidebar-primary"> AI</span></Link>
+        {isDoctor && (
+          <div className="mb-2 flex items-center gap-1.5 rounded-md bg-sidebar-accent/60 px-3 py-1.5 text-xs font-medium text-sidebar-primary">
+            <Stethoscope className="size-3.5" /> Doctor account
+          </div>
+        )}
+        <nav className="mt-2 flex flex-1 flex-col gap-1 text-sm">
           {nav.map(({ to, label, icon: I }) => (
             <Link key={to} to={to} className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-sidebar-accent" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary" }}>
               <I className="size-4" />{label}

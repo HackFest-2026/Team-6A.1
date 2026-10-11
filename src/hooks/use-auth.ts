@@ -22,5 +22,5 @@ export function useAuth() {
       .then(({ data }) => setRoles((data ?? []).map((r) => r.role)));
   }, [user]);
 
-  return { user, roles, loading, isAdmin: roles.includes("admin") };
+  return { user, roles, loading, isAdmin: roles.includes("admin"), isDoctor: roles.includes("doctor") };
 }

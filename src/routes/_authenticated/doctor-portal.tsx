@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -50,9 +50,48 @@ export const Route = createFileRoute("/_authenticated/doctor-portal")({
       "Doctor Portal",
       "Manage clinical consultation requests and review patient chest X-ray scans.",
     ),
+  /**
+   * Route-level access guard.
+   *
+   * Allowed to reach this page:
+   *   1. Users who already have a doctor record (any status: PENDING → VERIFIED)
+   *   2. Users who have the "doctor" or "admin" app_role
+   *   3. New applicants routed here from auth-callback with ?intent=doctor
+   *      (no record yet — they see the Apply form; no clinical data is exposed)
+   *
+   * Pure patients navigating here directly are redirected to /dashboard.
+   */
+  beforeLoad: async ({ context, location }) => {
+    const userId = context.user.id;
+
+    // Check for an existing doctor record
+    const { data: doctorRow } = await supabase
+      .from("doctors")
+      .select("id, status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (doctorRow?.status === "VERIFIED") {
+      throw redirect({ to: "/doctor" });
+    }
+
+    if (doctorRow) {
+      throw redirect({ to: "/doctor/verification-status" });
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("intent") === "doctor") {
+      throw redirect({ to: "/doctor/verification-status", search: { intent: "doctor" } });
+    }
+
+    // Pure patient with no doctor intent — redirect away.
+    throw redirect({ to: "/dashboard" });
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(myDoctorQuery),
   component: DoctorPortal,
 });
+
+
 
 function DoctorPortal() {
   const { data: doc } = useSuspenseQuery(myDoctorQuery);
